@@ -19,6 +19,7 @@ class Example extends Phaser.Scene {
 
   create () {
     this.gameStarted = false;
+    this.gameCompleted = false;
 
     // prepare scene
     this.add.image(400, 300, 'background');
@@ -36,7 +37,7 @@ class Example extends Phaser.Scene {
     const D = this.add.text(650, 400,  'D', { fill: 'grey', fontSize: '50px' });
 
     // put all above alphabets in an array
-    this.alphabets = [A, B, C, D];
+    const alphabets = [A, B, C, D];
 
     this.grass = this.add.tileSprite(0, 600, 1600, 100, 'grass');
 
@@ -50,12 +51,46 @@ class Example extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, 800, 555);
     this.kid.setDepth(1);
 
+    // enable overlap for kid
+    this.kid.body.onOverlap = true;
+    this.kid.body.onWorldBounds = true;
+
     function jump () {
       this.kid.setVelocityY(-300);
     }
 
     this.input.on('pointerdown', jump, this);
     this.input.keyboard.on('keydown-SPACE', jump, this);
+
+    // use worldbounds event to reset the kid's velocity when it hits the world bounds
+    this.physics.world.on('worldbounds', (body, up, down, left, right) => {
+      if (body.gameObject === this.kid && (right || left) && this.gameCompleted === false) {
+        this.kid.setX(20);
+        this.kid.setVelocityX(50);
+      }
+    });
+
+    this.alphabets = this.physics.add.staticGroup(alphabets);
+
+    this.physics.add.overlap(this.kid, alphabets, (kid, alphabet) => {
+      alphabet.setFill('#2ecc71');
+      this.sound.play('growl');
+    });
+  
+    this.physics.world.on('overlap', (gameObject1, gameObject2, body1, body2) => {
+      let complete = true;
+
+      // run the checkComplete function to see if the game should end with congratulations message
+      alphabets.forEach((alphabet) => {
+        if (alphabet.style.color !== '#2ecc71') {
+          complete = false;
+        }
+      })
+      if (complete) {
+        this.add.text(160, 150,  '✅ Congratulations', { fontSize: '50px', color: '#2ecc71'});
+        this.gameCompleted = true;
+      }
+    });
 
     // create a tap to play button that disables the game until pressed when game starts
     const createTapToPlayButton = () => {
@@ -66,46 +101,12 @@ class Example extends Phaser.Scene {
         tapToPlayButton.destroy();
         rectangle.destroy();
         this.gameStarted = true;
+
+        this.kid.setVelocityX(50);
       });
     }
 
     createTapToPlayButton();
-  }
-
-  update () {
-    if (this.gameStarted) {
-      // stop the kid from walking when it reached to end of world on right edge of world
-      this.kid.setVelocityX(50);
-    }
-
-    let complete = true;
-
-    // run the checkComplete function to see if the game should end with congratulations message
-    this.alphabets.forEach((alphabet) => {
-      if (alphabet.style.color !== '#2ecc71') {
-        complete = false;
-      }
-    })
-    if (complete) {
-      console.log('You have completed the game');
-      this.add.text(160, 150,  '✅ Congratulations', { fontSize: '50px', color: '#2ecc71'});
-    }
-
-    if (this.kid.x > 780) {
-      if (complete) {
-        this.kid.setVelocityX(0);
-      } else {
-        this.kid.x = 20;
-      }
-    }
-
-    // check if kid collides with characters and when it does, change the color of the character
-    this.alphabets.forEach((alphabet) => {
-      if (Math.abs(this.kid.x - alphabet.x) < 30 && Math.abs(this.kid.y - alphabet.y) < 30) {
-        alphabet.setFill('#2ecc71');
-        this.sound.play('growl');
-      }
-    })
   }
 }
 
