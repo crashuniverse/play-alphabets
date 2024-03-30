@@ -9,7 +9,7 @@ import grass from './assets/grass.png';
 class Example extends Phaser.Scene {
   preload () {
     this.load.image('kid', kid);      
-    this.load.audio('growl', 'https://labs.phaser.io/assets/audio/monsters/growl1.ogg');
+    this.load.audio('growl', 'https://labs.phaser.io/assets/audio/monsters/growl1.mp3');
     this.load.image('background', background);
     this.load.image('clouds', clouds);
     this.load.image('mountains1', mountains1);
